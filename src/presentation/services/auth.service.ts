@@ -1,60 +1,40 @@
-import { UserModel } from './../../database/mongodb/models/user.model';
-import { RegisterUserDto } from './../../domain/dtos/auth/register-user.dto';
+import { RegisterUserDto } from '../../domain/dtos/auth/register-user.dto';
 import { UserEntity } from '../../domain/entities/user.entity';
-import { promises } from "dns";
-import { LoginUserDto } from '../../domain/dtos/auth/login-user.dto';
+import { UserModel } from '../../database/mongodb/models/user.model';
 import { UserMaper } from '../../domain/mapers/user.mapers';
+import { LoginUserDto } from '../../domain/dtos/auth/login-user.dto';
 
-export class UserService {
-  async create(registeUSer: RegisterUserDto): Promise<UserEntity> {
-    const {name , email,password,roles,img}= registeUSer;
-    try {
-      const exist = await UserModel.findOne({ email });
-      if (exist) throw Error("email ya registro");
-      const user = await UserModel.create(registeUSer);
-      if (!user) throw Error("error_service");
-      await user.save();
-      return UserMaper.fromEntity(user);
-    } catch (error) {
-        throw error;
+
+export class AuthService{
+
+    async register(registerUserDto: RegisterUserDto): Promise<UserEntity> {
+        const { email } = registerUserDto;
+        try{
+            const exist = await UserModel.findOne({ email });
+            if (exist) throw Error("error");
+
+            const user = await UserModel.create(registerUserDto);
+            if (!user) throw Error("error");
+            
+            await user.save();
+
+            return UserMaper.fromEntity(user);
+        }catch(error){
+            throw error
+        }
+
+
     }
-}
+    async login(loginUserDto: LoginUserDto): Promise<UserEntity> {
+        const { email, password } = loginUserDto;
+        try{
+            const exist = await UserModel.findOne({ email });
+            if (!exist) throw Error("error");
 
-async update(LoginUser:LoginUserDto, id:string):Promise<UserEntity>{
-  try {
-      const User = await UserModel.findByIdAndUpdate({
-          id: LoginUser,
-          data:{...LoginUser}
-      });
-      if(!User) throw Error('Error')
-      await User.save();
-      return UserMaper.fromEntity(User);
-
-  } catch (error) {
-      throw error; 
-  }
-}
-
- 
-async delete(id:string):Promise<UserEntity>{
-  try {
-      const User = await UserModel.findOneAndDelete({id});
-      if(!User) throw Error('Error')
-      return UserMaper.fromEntity(User);
-
-  } catch (error) {
-      throw error; 
-  }
-}
-async findOne(id:string):Promise<UserEntity>{
-  try {
-      const User = await UserModel.findOne({id});
-      if(!User) throw Error('Error')
-      return UserMaper.fromEntity(User);
-
-  } catch (error) {
-      throw error; 
-  }
-}
-  findAll() {}
+            if (exist.password !== password) throw Error("error");
+            return UserMaper.fromEntity(exist);
+        }catch(error){
+            throw error
+        }
+    }
 }
